@@ -1,0 +1,12 @@
+{
+  "python.pythonPath": "backend/venv/Scripts/python.exe",
+  "python.envFile": "${workspaceFolder}/backend/.env",
+  "python.analysis.exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    "**/.vscode/dailydrizzle1"
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": [],
+  "css.lint.unknownAtRules": "ignore"
+}
