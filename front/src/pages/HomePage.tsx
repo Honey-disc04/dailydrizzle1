@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, FormEvent } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, TrendingUp, Loader, RefreshCw, Menu, X, Plus, Settings, Bookmark as BookmarkIcon, Activity as ActivityIcon } from 'lucide-react';
 import { ArticleCard } from '../components/News/ArticleCard';
@@ -26,8 +26,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export function HomePage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, ] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // Actual search query sent to API
+  const [searchTerm] = useState('');
+  const [searchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('general');
   const [bookmarkedArticles, setBookmarkedArticles] = useState<Set<string>>(new Set());
   const [likedArticles, setLikedArticles] = useState<Set<string>>(new Set());
@@ -38,8 +38,8 @@ export function HomePage() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [followedCategories, setFollowedCategories] = useState<string[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [isSearchMode, setIsSearchMode] = useState(false); // NEW: Track if in search mode
-  const [selectedLanguage, setSelectedLanguage] = useState('en'); // NEW: Language selection
+  const [isSearchMode] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
   const { user, logout } = useAuth();
 
@@ -58,25 +58,21 @@ export function HomePage() {
       fetchNews(selectedCategory);
     }
     
-    // Check if new articles in followed categories
     if (user && followedCategories.includes(selectedCategory) && notificationsEnabled) {
       checkForNewArticles(selectedCategory);
     }
   }, [selectedCategory, followedCategories, notificationsEnabled, isSearchMode]);
 
-  // Add this NEW useEffect after your existing ones
   useEffect(() => {
-  // Force refresh when component mounts
-  if (!isSearchMode) {
-    fetchNews(selectedCategory);
-  }
-}, []); // Empty dependency array = runs once on mount
+    if (!isSearchMode) {
+      fetchNews(selectedCategory);
+    }
+  }, []);
 
   const fetchUserData = async () => {
     if (!user) return;
 
     try {
-      // Fetch bookmarks
       const bookmarksRef = collection(db, 'bookmarks');
       const bookmarksQuery = query(bookmarksRef, where('user_id', '==', user.uid));
       const bookmarksSnapshot = await getDocs(bookmarksQuery);
@@ -87,7 +83,6 @@ export function HomePage() {
       });
       setBookmarkedArticles(bookmarkedIds);
 
-      // Fetch likes
       const likesRef = collection(db, 'likes');
       const likesQuery = query(likesRef, where('user_id', '==', user.uid));
       const likesSnapshot = await getDocs(likesQuery);
@@ -98,7 +93,6 @@ export function HomePage() {
       });
       setLikedArticles(likedIds);
 
-      // Fetch boards
       const boardsRef = collection(db, 'boards');
       const boardsQuery = query(boardsRef, where('user_id', '==', user.uid));
       const boardsSnapshot = await getDocs(boardsQuery);
@@ -122,7 +116,7 @@ export function HomePage() {
         const prefs = prefDoc.data();
         setFollowedCategories(prefs.preferredCategories || []);
         setNotificationsEnabled(prefs.pushNotifications || false);
-        setSelectedLanguage(prefs.language || 'en'); // Load saved language
+        setSelectedLanguage(prefs.language || 'en');
       }
     } catch (error) {
       console.error('Error loading preferences:', error);
@@ -130,29 +124,25 @@ export function HomePage() {
   };
 
   const checkForNewArticles = async (category: string) => {
-  // Check if browser supports notifications
-  if (!('Notification' in window)) return;
+    if (!('Notification' in window)) return;
 
-  // Check current permission
-  let hasPermission = Notification.permission === 'granted';
+    let hasPermission = Notification.permission === 'granted';
 
-  // Request permission if not granted and user has enabled notifications
-  if (!hasPermission && notificationsEnabled) {
-    const permission = await Notification.requestPermission();
-    hasPermission = permission === 'granted';
-    if (!hasPermission) return;
-  }
+    if (!hasPermission && notificationsEnabled) {
+      const permission = await Notification.requestPermission();
+      hasPermission = permission === 'granted';
+      if (!hasPermission) return;
+    }
 
-  // Show notification for the first article in followed category
-  if (articles.length > 0 && hasPermission) {
-    await notificationService.notifyNewArticle(
-      user?.uid ?? '',
-      articles[0].title,
-      category,
-      articles[0].url
-    );
-  }
-};
+    if (articles.length > 0 && hasPermission) {
+      await notificationService.notifyNewArticle(
+        user?.uid ?? '',
+        articles[0].title,
+        category,
+        articles[0].url
+      );
+    }
+  };
 
   const fetchNews = async (category: string) => {
     setLoading(true);
@@ -160,19 +150,15 @@ export function HomePage() {
 
     try {
       const timestamp = Date.now();
-
-      const response = await fetch(`${API_URL}/api/news?category=${category}&t=${timestamp}`
-      );
+      const response = await fetch(`${API_URL}/api/news?category=${category}&t=${timestamp}`);
       const data = await response.json();
       
       if (data.status === 'success') {
-        // Use stable article IDs based on URL
         const transformedArticles: Article[] = data.articles.map((article: any) => {
-          // Create stable ID from URL
           const stableId = article.url ? btoa(article.url).substring(0, 50) : `temp-${Date.now()}`;
           
           return {
-            id: stableId, // Stable ID that persists
+            id: stableId,
             title: article.title || 'No title',
             description: article.description || '',
             content: article.content || article.description || article.title || '',
@@ -203,21 +189,21 @@ export function HomePage() {
   };
   
   const saveActivity = async (type: string, articleId: string, articleTitle: string) => {
-  if (!user) return;
-  
-  try {
-    await addDoc(collection(db, 'activities'), {
-      user_id: user.uid,
-      type: type,
-      article_id: articleId,
-      article_title: articleTitle,
-      timestamp: Timestamp.now()
-    });
-    console.log('✅ Activity saved:', type);
-  } catch (error) {
-    console.error('❌ Error saving activity:', error);
-  }
-};
+    if (!user) return;
+    
+    try {
+      await addDoc(collection(db, 'activities'), {
+        user_id: user.uid,
+        type: type,
+        article_id: articleId,
+        article_title: articleTitle,
+        timestamp: Timestamp.now()
+      });
+      console.log('✅ Activity saved:', type);
+    } catch (error) {
+      console.error('❌ Error saving activity:', error);
+    }
+  };
 
   const handleSummarize = async (articleId: string) => {
     if (summarizedArticles.has(articleId)) {
@@ -245,7 +231,7 @@ export function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: textToSummarize,
-          lang: selectedLanguage // Pass language for translation
+          lang: selectedLanguage
         })
       });
 
@@ -261,7 +247,6 @@ export function HomePage() {
         newMap.set(articleId, data.summary);
         setSummarizedArticles(newMap);
 
-        // ✅ Track activity using the saveActivity function
         if (user) {
           await saveActivity('summarize', articleId, article.title);
         }
@@ -290,7 +275,6 @@ export function HomePage() {
 
     try {
       if (bookmarkedArticles.has(articleId)) {
-        // Remove bookmark
         console.log('Removing bookmark...');
         const bookmarksRef = collection(db, 'bookmarks');
         const q = query(bookmarksRef, where('user_id', '==', user.uid), where('article_id', '==', articleId));
@@ -307,7 +291,6 @@ export function HomePage() {
           return newSet;
         });
       } else {
-        // Show board selection modal
         console.log('Opening board modal...');
         setShowBoardModal(articleId);
       }
@@ -348,7 +331,6 @@ export function HomePage() {
       setBookmarkedArticles(prev => new Set(prev).add(articleId));
       setShowBoardModal(null);
 
-      // Save to activity
       try {
         await addDoc(collection(db, 'activities'), {
           user_id: user.uid,
@@ -379,7 +361,6 @@ export function HomePage() {
 
     try {
       if (likedArticles.has(articleId)) {
-        // Unlike
         console.log('Removing like...');
         const likesRef = collection(db, 'likes');
         const q = query(likesRef, where('user_id', '==', user.uid), where('article_id', '==', articleId));
@@ -396,7 +377,6 @@ export function HomePage() {
           return newSet;
         });
       } else {
-        // Like
         console.log('Adding like...');
         const article = articles.find(a => a.id === articleId);
         
@@ -421,12 +401,10 @@ export function HomePage() {
   };
 
   const filteredArticles = useMemo(() => {
-    // If in search mode, don't filter - show all search results
     if (isSearchMode) {
       return articles;
     }
     
-    // If not searching, filter by local search term
     if (!searchTerm) return articles;
     
     return articles.filter(article =>
@@ -458,14 +436,6 @@ export function HomePage() {
       </div>
     );
   }
-
-  function handleSearch(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    setSearchQuery(searchTerm);
-    setIsSearchMode(true);
-    fetchNews(selectedCategory); // Optionally fetch news based on the selected category
-  }
-  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -721,4 +691,3 @@ export function HomePage() {
     </div>
   );
 }
-

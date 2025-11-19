@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 interface UserPreferences {
   preferredCategories: string[];
   language: string;
-  summaryLength: string;
+ 
   pushNotifications: boolean;
   emailDigest: boolean;
 }
@@ -35,12 +35,6 @@ const languages = [
   { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
 ];
 
-const summaryLengths = [
-  { value: 'short', label: 'Short', description: '~60-150 words' },
-  { value: 'medium', label: 'Medium', description: '~120-300 words' },
-  { value: 'long', label: 'Long', description: '~200-500 words' },
-];
-
 export function SettingsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -51,7 +45,6 @@ export function SettingsPage() {
   const [preferences, setPreferences] = useState<UserPreferences>({
     preferredCategories: ['technology', 'science', 'health'],
     language: 'en',
-    summaryLength: 'medium',
     pushNotifications: true,
     emailDigest: true,
   });
@@ -78,7 +71,6 @@ export function SettingsPage() {
         setPreferences({
           preferredCategories: data.preferredCategories || ['technology', 'science', 'health'],
           language: data.language || 'en',
-          summaryLength: data.summaryLength || 'medium',
           pushNotifications: data.pushNotifications ?? true,
           emailDigest: data.emailDigest ?? true,
         });
@@ -99,7 +91,6 @@ export function SettingsPage() {
       await setDoc(docRef, {
         preferredCategories: preferences.preferredCategories,
         language: preferences.language,
-        summaryLength: preferences.summaryLength,
         pushNotifications: preferences.pushNotifications,
         emailDigest: preferences.emailDigest,
         updatedAt: new Date().toISOString()
@@ -247,52 +238,6 @@ export function SettingsPage() {
                 <p className="text-xs text-gray-500 mt-2">
                   News articles and summaries will be translated to your preferred language
                 </p>
-              </div>
-            </motion.div>
-
-            {/* AI Summary Preferences */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-md p-6"
-            >
-              <div className="flex items-center space-x-2 mb-4">
-                <Sparkles className="h-5 w-5 text-gray-700" />
-                <h2 className="text-lg font-semibold text-gray-900">AI Summary Preferences</h2>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Default Summary Length
-                </label>
-                <div className="space-y-3">
-                  {summaryLengths.map(option => (
-                    <label
-                      key={option.value}
-                      className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        preferences.summaryLength === option.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="radio"
-                          name="summaryLength"
-                          value={option.value}
-                          checked={preferences.summaryLength === option.value}
-                          onChange={(e) => setPreferences(prev => ({ ...prev, summaryLength: e.target.value }))}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <div>
-                          <span className="font-medium text-gray-900">{option.label}</span>
-                          <p className="text-sm text-gray-500">{option.description}</p>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
               </div>
             </motion.div>
 

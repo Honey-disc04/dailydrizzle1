@@ -171,11 +171,12 @@ export function BookmarksPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search your bookmarks..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent shadow-sm"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent shadow-sm"
               />
             </div>
           )}
         </div>
+
 
         {/* Bookmarked Articles */}
         {filteredArticles.length > 0 ? (
